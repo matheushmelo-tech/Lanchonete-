@@ -1,4 +1,5 @@
-"""Programa principal da lanchonete (delivery): menu interativo no terminal."""
+
+import math
 
 from bebida import Bebida
 from lanche import Lanche
@@ -7,113 +8,78 @@ from sobremesa import Sobremesa
 
 
 class Lanchonete:
-    """Classe gerenciadora que guarda a lista de produtos da lanchonete.
-
-    A lista pode conter objetos de tipos diferentes (Lanche, Bebida,
-    Sobremesa), todos filhos de Produto.
-    """
 
     def __init__(self, nome="Lanchonete"):
-        """Inicializa a lanchonete com uma lista de produtos vazia.
 
-        Args:
-            nome (str): nome da lanchonete (não pode ser vazio).
-
-        Raises:
-            ValueError: se o nome for vazio.
-        """
         self.nome = nome
         self.__produtos = []
 
     @property
     def nome(self):
-        """str: retorna o nome da lanchonete."""
+
         return self.__nome
 
     @nome.setter
     def nome(self, valor):
-        """Define o nome da lanchonete, impedindo valores vazios.
 
-        Raises:
-            ValueError: se o nome for vazio ou conter apenas espaços.
-        """
         if not isinstance(valor, str) or not valor.strip():
             raise ValueError("O nome da lanchonete não pode ser vazio.")
         self.__nome = valor.strip()
 
     @property
     def produtos(self):
-        """list: retorna uma cópia da lista de produtos cadastrados."""
+
         return self.__produtos.copy()
 
     def adicionar_produto(self, produto):
-        """Cadastra um produto na lanchonete.
 
-        Args:
-            produto (Produto): objeto Produto (ou de uma classe filha).
-
-        Raises:
-            TypeError: se o objeto não for um Produto.
-        """
         if not isinstance(produto, Produto):
             raise TypeError("Só é possível cadastrar objetos do tipo Produto.")
         self.__produtos.append(produto)
 
     def buscar_por_nome(self, termo):
-        """Busca produtos cujo nome contenha o termo informado.
 
-        A busca ignora diferença entre maiúsculas e minúsculas.
-
-        Args:
-            termo (str): texto a ser procurado no nome dos produtos.
-
-        Returns:
-            list: lista com os produtos encontrados (pode ser vazia).
-        """
         termo = termo.strip().lower()
+        if not termo:
+            return []
         return [p for p in self.__produtos if termo in p.nome.lower()]
 
     def __len__(self):
-        """Retorna a quantidade de produtos cadastrados."""
+
         return len(self.__produtos)
 
     def __str__(self):
-        """Retorna um resumo da lanchonete de forma legível."""
+
         return f"Lanchonete: {self.__nome} | Produtos cadastrados: {len(self.__produtos)}"
 
 
 def ler_texto(mensagem):
-    """Lê um texto digitado pelo usuário.
-
-    Args:
-        mensagem (str): texto exibido ao usuário.
-
-    Returns:
-        str: texto digitado, sem espaços nas pontas.
-    """
     return input(mensagem).strip()
 
 
 def ler_numero(mensagem):
-    """Lê um número digitado pelo usuário (aceita vírgula como decimal).
-
-    Repete a pergunta até que um número válido seja informado.
-
-    Args:
-        mensagem (str): texto exibido ao usuário.
-
-    Returns:
-        float: número digitado.
-    """
     while True:
         try:
-            return float(input(mensagem).strip().replace(",", "."))
+            numero = float(input(mensagem).strip().replace(",", "."))
+            if not math.isfinite(numero):
+                raise ValueError
+            return numero
         except ValueError:
             print("Valor inválido. Digite um número (ex: 12.50).")
 
 
+def ler_sim_nao(mensagem):
+    while True:
+        resposta = ler_texto(mensagem).casefold()
+        if resposta in {"s", "sim"}:
+            return True
+        if resposta in {"n", "não", "nao"}:
+            return False
+        print("Resposta inválida. Digite 's' para sim ou 'n' para não.")
+
+
 def exibir_menu():
-    """Exibe as opções do menu principal."""
+
     print("\n===== LANCHONETE DELIVERY =====")
     print("1 - Cadastrar produto")
     print("2 - Listar produtos")
@@ -123,11 +89,6 @@ def exibir_menu():
 
 
 def criar_lanche():
-    """Pede os dados ao usuário e cria um Lanche.
-
-    Returns:
-        Lanche: objeto criado.
-    """
     nome = ler_texto("Nome do lanche: ")
     preco = ler_numero("Preço (R$): ")
     pao = ler_texto("Tipo de pão: ")
@@ -137,36 +98,20 @@ def criar_lanche():
 
 
 def criar_bebida():
-    """Pede os dados ao usuário e cria uma Bebida.
-
-    Returns:
-        Bebida: objeto criado.
-    """
     nome = ler_texto("Nome da bebida: ")
     preco = ler_numero("Preço base (R$): ")
     tamanho_ml = ler_numero("Tamanho (ml): ")
-    gelada = ler_texto("É gelada? (s/n): ").lower() == "s"
+    gelada = ler_sim_nao("É gelada? (s/n): ")
     return Bebida(nome, preco, tamanho_ml, gelada)
 
 
 def criar_sobremesa():
-    """Pede os dados ao usuário e cria uma Sobremesa.
-
-    Returns:
-        Sobremesa: objeto criado.
-    """
     nome = ler_texto("Nome da sobremesa: ")
-    preco = ler_numero("Preço (R$): ")
-    sabor = ler_texto("Sabor: ")
-    return Sobremesa(nome, preco, sabor)
-
+    preco = ler_numero("Preco (R$): ")
+    serve_gelada = ler_sim_nao("Deve ser servida gelada? (s/n): ")
+    return Sobremesa(nome, preco, serve_gelada)
 
 def cadastrar_produto(lanchonete):
-    """Opção 1: cadastra um novo produto na lanchonete.
-
-    Args:
-        lanchonete (Lanchonete): lanchonete que receberá o produto.
-    """
     print("\nTipo de produto: 1 - Lanche | 2 - Bebida | 3 - Sobremesa")
     tipos = {"1": criar_lanche, "2": criar_bebida, "3": criar_sobremesa}
     criador = tipos.get(ler_texto("Escolha o tipo: "))
@@ -182,11 +127,6 @@ def cadastrar_produto(lanchonete):
 
 
 def listar_produtos(lanchonete):
-    """Opção 2: lista todos os produtos cadastrados.
-
-    Args:
-        lanchonete (Lanchonete): lanchonete a ser listada.
-    """
     print(f"\n--- {lanchonete} ---")
     if len(lanchonete) == 0:
         print("Nenhum produto cadastrado.")
@@ -196,11 +136,6 @@ def listar_produtos(lanchonete):
 
 
 def buscar_produto(lanchonete):
-    """Opção 3: busca produtos pelo nome.
-
-    Args:
-        lanchonete (Lanchonete): lanchonete onde a busca será feita.
-    """
     termo = ler_texto("\nNome (ou parte do nome) a buscar: ")
     encontrados = lanchonete.buscar_por_nome(termo)
     if not encontrados:
@@ -212,14 +147,6 @@ def buscar_produto(lanchonete):
 
 
 def executar_polimorfismo(lanchonete):
-    """Opção 4: chama calcular_preco_final() em todos os produtos.
-
-    Percorre a lista com objetos de tipos diferentes e chama o mesmo
-    método em todos, mostrando que cada tipo responde de um jeito.
-
-    Args:
-        lanchonete (Lanchonete): lanchonete com os produtos.
-    """
     if len(lanchonete) == 0:
         print("\nNenhum produto cadastrado.")
         return
@@ -230,7 +157,7 @@ def executar_polimorfismo(lanchonete):
 
 
 def main():
-    """Executa o menu até o usuário escolher a opção de sair."""
+
     lanchonete = Lanchonete("Lanchonete Delivery")
     acoes = {
         "1": cadastrar_produto,
